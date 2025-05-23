@@ -1,0 +1,46 @@
+version: "3.8"
+
+services:
+  db-postgres:
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "${DB_LOCAL_PORT}:${DB_PORT}"
+    env_file:
+      - .env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./database_dump.sql:/docker-entrypoint-initdb.d/database_dump.sql
+    networks:
+      - my-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+      - DATABASE_URL=${DATABASE_URL}
+    ports:
+      - "4000:4000" # hoặc dùng ${PORT}:${PORT} nếu chắc chắn đã load .env
+    depends_on:
+      - db-postgres
+    networks:
+      - my-network
+    volumes:
+      - .:/rental/backend
+      - /rental/backend/node_modules
+    command: npm run dev
+
+volumes:
+  pgdata:
+
+networks:
+  my-network:

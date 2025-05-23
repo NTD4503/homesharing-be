@@ -1,0 +1,69 @@
+Table posts {
+  post_id INT [pk, increment]
+  room_id INT [not null, ref: - room.room_id]
+  user_id INT [not null, ref: > users.user_id]
+  expired_in DATE [not null]
+  is_approved boolean [default: false]
+  is_block boolean [default: false]
+  available boolean [default: false]
+  post_type_id INT [not null, ref: - post_type.post_type_id]
+  created_at TIMESTAMP [default: `CURRENT_TIMESTAMP`]
+}
+
+Table room {
+  room_id INT [pk, increment]
+  title VARCHAR(255) [not null]
+  description TEXT
+  price INT [not null]
+  location VARCHAR(255) [not null] //example location:'Ngõ 178, Giải Phóng, Thanh Xuân, Hà Nội'
+  location_codes VARCHAR[]
+}
+
+Table room_detail {
+  room_detail_id INT [pk, increment]
+  room_id INT [not null, ref: - room.room_id]
+  room_type_id INT [not null, ref: - room_type.room_type_id]
+  capacity INT [not null]
+  area INT [not null]
+  gender VARCHAR(50) [not null] //3 types['M','FM','ALL']
+}
+
+Table room_type {
+  room_type_id INT [pk, increment]
+  post_type_name VARCHAR(50) [not null]
+}
+
+Table post_type {
+  post_type_id INT [pk, increment]
+  post_type_name VARCHAR(50) [not null]
+}
+
+Table amenities {
+  amenity_id INT [pk, increment]
+  amenity_name VARCHAR(255) [not null] //amenity_name store in vietnamese //example:'Điều hòa'
+}
+
+Table room_amenities {
+  room_amenities_id INT [pk, increment]
+  amenity_id INT [not null, ref: < amenities.amenity_id]
+  room_id INT [not null, ref: < room.room_id]
+}
+
+Table room_images {
+  room_images_id INT [pk, increment]
+  room_id INT [not null, ref: < room.room_id]
+  image_url VARCHAR(255) [not null]
+}
+
+Table services {
+  service_id INT [pk, increment] 
+  service_name VARCHAR [not null]
+  price_per_day INT [not null]
+  price_per_week INT [not null]
+  price_per_month INT [not null]
+  advantages TEXT
+  title_color VARCHAR
+  auto_approval boolean [default: false]
+  prominent_badge boolean [default: false]
+}
+
