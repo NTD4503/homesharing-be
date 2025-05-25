@@ -152,6 +152,8 @@ const createPost = async (req, res) => {
       post_type_id,
       custom_amenities,
       location_codes,
+      lat,
+      lng,
       is_approved,
       expired_in,
     } = req.body;
@@ -168,6 +170,8 @@ const createPost = async (req, res) => {
       description,
       location,
       location_codes,
+      lat,
+      lng,
     };
     const room = await roomService.save(roomData);
     const postData = {
@@ -279,6 +283,31 @@ const getTotalPosts = async (req, res) => {
   }
 };
 
+const getNearbyPosts = async (req, res) => {
+  try {
+    const { lat, lng, radius } = req.query;
+
+    if (!lat || !lng || !radius) {
+      return res.status(400).json({ message: "Thiếu tham số lat, lng hoặc radius" });
+    }
+
+    const posts = await postSevice.retrievePostsNearby(
+      parseFloat(lat),
+      parseFloat(lng),
+      parseFloat(radius)
+    );
+
+    res.status(200).json(posts);
+  } catch (error) {
+    console.error("Lỗi tại /posts/nearby:", error);
+    res.status(500).json({
+      message: "Internal Server Error",
+      error: error.message,
+      stack: error.stack, // (nếu cần debug sâu hơn)
+    });
+  }
+};
+
 module.exports = {
   getTotalPosts,
   getAllPost,
@@ -296,4 +325,5 @@ module.exports = {
   updatePost,
   deletePost,
   updatePostRange,
+  getNearbyPosts
 };
