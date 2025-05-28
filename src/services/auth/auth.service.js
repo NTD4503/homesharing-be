@@ -32,6 +32,8 @@ const login = async (email, password) => {
     user.access_token = accessToken;
     user.refresh_token = refreshToken;
 
+    // console.log("User object before return:", user);
+    // console.log("User ID:", user.user_id);
     return { user };
   } catch (error) {
     console.log(error);

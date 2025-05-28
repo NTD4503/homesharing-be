@@ -16,6 +16,8 @@ const routes = [
   require("./v1/service.api"),
   require("./v1/contact.api"),
   require("./v1/chat.api"),
+  require("./v1/message.api"),
+
 ];
 
 routes.forEach((route) => router.use(route));

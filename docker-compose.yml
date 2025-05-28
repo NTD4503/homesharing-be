@@ -36,11 +36,12 @@ services:
       - my-network
     volumes:
       - .:/rental/backend
-      - /rental/backend/node_modules
+      # - /rental/backend/node_modules
     command: npm run dev
 
 volumes:
   pgdata:
+
 
 networks:
   my-network:
