@@ -55,16 +55,16 @@ const signUpController = async (req, res, next) => {
 
     const isOTPCorrect = verifyOTP(userOTP, genedOTP);
     if (!isOTPCorrect) {
-      return res.json({ message: "Mã OTP không chính xác hoặc đã hết hạn!" });
+      return res.status(400).json({ message: "Mã OTP không chính xác hoặc đã hết hạn!" });
     }
 
     const response = await signUp(userData);
 
     if (typeof response === "string") {
-      res.json({ message: response });
+      res.status(400).json({ message: response });
     } else {
       const { newUser } = response;
-      res.json({ newUser });
+      res.status(200).json({ newUser });
     }
   } catch (error) {
     next(error);
@@ -76,9 +76,9 @@ const verifyOTPController = async (req, res, next) => {
     const { userOTP, genedOTP } = req.body;
     const isOTPCorrect = verifyOTP(userOTP, genedOTP);
     if (!isOTPCorrect) {
-      return res.json({ message: "Mã OTP không chính xác hoặc đã hết hạn!" });
+      return res.status(400).json({ message: "Mã OTP không chính xác hoặc đã hết hạn!" });
     }
-    return res.json({ message: "OTP matched" });
+    return res.status(200).json({ message: "OTP matched" });
   } catch (error) {
     next(error);
   }
