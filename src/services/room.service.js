@@ -26,7 +26,11 @@ const retrieveByCriteria = async (criteria) => {
     let query = knex("room")
       .select("room.room_id", "room.lat", "room.lng") // Thêm lat/lng để lọc sau
       .leftJoin("room_detail", "room.room_id", "room_detail.room_id")
-      .leftJoin("room_type", "room_detail.room_type_id", "room_type.room_type_id");
+      .leftJoin(
+        "room_type",
+        "room_detail.room_type_id",
+        "room_type.room_type_id"
+      );
 
     // ====== LỌC GIÁ ======
     if (criteria.min_price !== undefined && criteria.max_price !== undefined) {
@@ -49,7 +53,10 @@ const retrieveByCriteria = async (criteria) => {
       } else if (criteria.min_area === criteria.max_area) {
         query = query.where("area", ">=", criteria.max_area);
       } else {
-        query = query.whereBetween("area", [criteria.min_area, criteria.max_area]);
+        query = query.whereBetween("area", [
+          criteria.min_area,
+          criteria.max_area,
+        ]);
       }
     }
 
@@ -75,7 +82,10 @@ const retrieveByCriteria = async (criteria) => {
     if (criteria.sort_type && criteria.order) {
       const validSortTypes = ["price", "area"];
       const validOrders = ["asc", "desc"];
-      if (validSortTypes.includes(criteria.sort_type) && validOrders.includes(criteria.order)) {
+      if (
+        validSortTypes.includes(criteria.sort_type) &&
+        validOrders.includes(criteria.order)
+      ) {
         query = query.orderBy(criteria.sort_type, criteria.order);
       }
     }
@@ -90,23 +100,47 @@ const retrieveByCriteria = async (criteria) => {
         .filter((room) => {
           if (!room.lat || !room.lng) {
             console.warn(`Phòng ${room.room_id} bị thiếu tọa độ`);
-            return false;
+            room.distance = -1; // Nếu thiếu tọa độ, gán distance là -1
+            return false; // Bỏ qua phòng này
           }
 
-          const distance = getDistanceInKm(criteria.lat, criteria.lng, room.lat, room.lng);
-          console.log(`Phòng ${room.room_id} cách ${distance.toFixed(2)} km`);
-          return distance <= criteria.radius_km;
+          const distance = getDistanceInKm(
+            criteria.lat,
+            criteria.lng,
+            room.lat,
+            room.lng
+          );
+
+          if (isNaN(distance)) {
+            room.distance = "-1"; // Nếu không tính được khoảng cách, gán distance là -1
+          } else {
+            room.distance = distance; // Gán khoảng cách tính được
+          }
+
+          console.log(
+            `Phòng ${room.room_id} cách ${room.distance.toFixed(2)} km`
+          );
+          return room.distance <= criteria.radius_km;
         })
-        .map((room) => room.room_id);
+        .map((room) => ({
+          room_id: room.room_id,
+          distance:
+            room.distance !== undefined ? room.distance.toFixed(2) : "-1", // Gán "-1" nếu không có distance
+        }));
+    } else {
+      finalRoomIds = filteredRooms.map((room) => ({
+        room_id: room.room_id,
+        distance: "-1",
+      }));
     }
 
+    console.log("✅ [roomService] Final roomIds with distance:", finalRoomIds);
     return finalRoomIds;
   } catch (error) {
     console.log(error);
     throw error;
   }
 };
-
 
 const retrieveByArea = async (areaCodes) => {
   try {

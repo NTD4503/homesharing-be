@@ -40,9 +40,7 @@ const createPaymentLink = async (req, res, next) => {
 const payOsReturn = async (req, res, next) => {
   try {
     const payload = req.body;
-
-    const order = await payos.getPaymentLinkInformation(payload.transaction_id);
-
+    const order = await payos.getPaymentLinkInformation(payload.orderCode);
     const saveData = {
       user_id: payload.user_id,
       amount: order.amount,

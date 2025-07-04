@@ -123,12 +123,12 @@ const retrieveLatest = async () => {
       )
       .leftJoin("room", "posts.room_id", "room.room_id")
       .leftJoin("room_detail", "posts.room_id", "room_detail.room_id")
-      .where("posts.delete_flag", false)  // Bài viết không bị xoá
+      .where("posts.delete_flag", false) // Bài viết không bị xoá
       // .andWhere("posts.available", true)  // Bài viết còn hoạt động
-      .andWhere("posts.is_blocked", false)  // Bài viết không bị chặn
-      .andWhere("posts.is_approved", true)  // Bài viết đã được duyệt
-      .orderBy("posts.created_at", "desc")  // Sắp xếp theo ngày tạo giảm dần
-      .limit(10);  // Giới hạn số lượng bài viết
+      .andWhere("posts.is_blocked", false) // Bài viết không bị chặn
+      .andWhere("posts.is_approved", true) // Bài viết đã được duyệt
+      .orderBy("posts.created_at", "desc") // Sắp xếp theo ngày tạo giảm dần
+      .limit(10); // Giới hạn số lượng bài viết
 
     // Lấy tất cả ảnh liên quan đến các bài viết
     const images = await roomImageService.retrieveAll();
@@ -136,16 +136,15 @@ const retrieveLatest = async () => {
     // Gán ảnh vào mỗi bài viết
     posts.forEach((post) => {
       const postImages = images.filter((img) => img.post_id === post.post_id);
-      post.images = postImages.length > 0 ? postImages[0].images : [];  // Nếu có ảnh thì gán vào
+      post.images = postImages.length > 0 ? postImages[0].images : []; // Nếu có ảnh thì gán vào
     });
 
     return posts;
   } catch (error) {
     console.error("Lỗi khi lấy bài viết mới nhất:", error);
-    throw error;  // Ném lỗi để xử lý ở nơi gọi
+    throw error; // Ném lỗi để xử lý ở nơi gọi
   }
 };
-
 
 const retrieveHottest = async () => {
   try {
@@ -162,12 +161,12 @@ const retrieveHottest = async () => {
       .leftJoin("room", "posts.room_id", "room.room_id")
       .leftJoin("room_detail", "posts.room_id", "room_detail.room_id")
       .leftJoin("users", "posts.user_id", "users.user_id")
-      .where("posts.delete_flag", false)  // Bài viết không bị xoá
+      .where("posts.delete_flag", false) // Bài viết không bị xoá
       // .andWhere("posts.available", true)  // Bài viết còn hoạt động
-      .andWhere("posts.is_blocked", false)  // Bài viết không bị chặn
-      .andWhere("posts.is_approved", true)  // Bài viết đã được duyệt
-      .orderBy("users.service_id", "asc")  // Sắp xếp theo service_id của người dùng
-      .limit(10);  // Giới hạn số lượng bài viết
+      .andWhere("posts.is_blocked", false) // Bài viết không bị chặn
+      .andWhere("posts.is_approved", true) // Bài viết đã được duyệt
+      .orderBy("users.service_id", "asc") // Sắp xếp theo service_id của người dùng
+      .limit(10); // Giới hạn số lượng bài viết
 
     // Lấy tất cả ảnh liên quan đến các bài viết
     const images = await roomImageService.retrieveAll();
@@ -175,16 +174,15 @@ const retrieveHottest = async () => {
     // Gán ảnh vào mỗi bài viết
     posts.forEach((post) => {
       const postImages = images.filter((img) => img.post_id === post.post_id);
-      post.images = postImages.length > 0 ? postImages[0].images : [];  // Nếu có ảnh thì gán vào
+      post.images = postImages.length > 0 ? postImages[0].images : []; // Nếu có ảnh thì gán vào
     });
 
     return posts;
   } catch (error) {
     console.error("Lỗi khi lấy bài viết hot nhất:", error);
-    throw error;  // Ném lỗi để xử lý ở nơi gọi
+    throw error; // Ném lỗi để xử lý ở nơi gọi
   }
 };
-
 
 const updateApprovedStatus = async (postId, isApproved) => {
   try {
@@ -263,16 +261,17 @@ const retrieveByCriteria = async (criteria) => {
     const allPosts = await retrievePosts();
     const images = await roomImageService.retrieveAll();
     const roomIds = await roomService.retrieveByCriteria(criteria);
-
     let filteredPosts = roomIds
-      .map((roomId) => {
-        const post = allPosts.find((post) => post.room_id === roomId);
+      .map(({ room_id, distance }) => {
+        console.log("✅ [postService] Processing room_id:", room_id);
+        const post = allPosts.find((post) => post.room_id === room_id);
         if (!post) return null;
 
         const postImages = images.find((img) => img.post_id === post.post_id);
         return {
           ...post,
           images: postImages ? postImages.images : [],
+          distance_km: distance ?? null, // Gán khoảng cách nếu có
         };
       })
       .filter((post) => post !== null)
@@ -280,12 +279,14 @@ const retrieveByCriteria = async (criteria) => {
         (post) =>
           !criteria.post_type_id || post.post_type_id == criteria.post_type_id
       );
-
+    // Sắp xếp theo thời gian mới nhất
     if (criteria.sort_type && criteria.sort_type === "latest") {
       filteredPosts.sort((a, b) =>
         moment(b.created_at).diff(moment(a.created_at))
       );
     }
+
+    // Nếu không sắp theo latest, price, area thì sort theo service_id
     if (
       criteria.sort_type !== "latest" &&
       criteria.sort_type !== "price" &&
@@ -294,6 +295,7 @@ const retrieveByCriteria = async (criteria) => {
       filteredPosts.sort((a, b) => a.service_id - b.service_id);
     }
 
+    console.log("✅ [postService] Filtered posts:", filteredPosts);
     return filteredPosts;
   } catch (error) {
     throw error;
